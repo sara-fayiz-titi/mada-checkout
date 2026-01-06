@@ -17,5 +17,5 @@ const createInstance = (baseURL: any) => {
   return instance;
 };
 
-export const madaInstance = createInstance("https://api.dev.mada-jo.com/");
-export const cmsInstance = createInstance("https://cms.dev.mada-jo.com/");
+export const madaInstance = createInstance("https://api.stg.mada-bnpl.com/");
+export const cmsInstance = createInstance(" https://cms.stg.mada-bnpl.com/");

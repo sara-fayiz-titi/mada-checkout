@@ -1,28 +1,36 @@
-"use client"
+"use client";
 
-import { useCart } from "@/hooks/use-cart"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
-import Image from "next/image"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useCart } from "@/hooks/use-cart";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function CartView() {
-  const { items, removeItem, updateQuantity, total } = useCart()
-  const router = useRouter()
+  const { items, removeItem, updateQuantity, total } = useCart();
+  const router = useRouter();
 
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <ShoppingBag className="h-20 w-20 text-muted-foreground mb-4" />
         <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
-        <p className="text-muted-foreground mb-6">Add some products to get started</p>
+        <p className="text-muted-foreground mb-6">
+          Add some products to get started
+        </p>
         <Link href="/">
           <Button>Continue Shopping</Button>
         </Link>
       </div>
-    )
+    );
   }
 
   return (
@@ -36,17 +44,30 @@ export function CartView() {
               <CardContent className="p-4">
                 <div className="flex gap-4">
                   <div className="relative h-24 w-24 rounded-md overflow-hidden bg-muted flex-shrink-0">
-                    <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
+                    <Image
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold mb-1 line-clamp-1">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{item.description}</p>
+                    <h3 className="font-semibold mb-1 line-clamp-1">
+                      {item.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                      {item.description}
+                    </p>
                     <p className="text-lg font-bold">${item.price}</p>
                   </div>
 
                   <div className="flex flex-col items-end justify-between">
-                    <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeItem(item.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
 
@@ -55,17 +76,23 @@ export function CartView() {
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 bg-transparent"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity - 1)
+                        }
                         disabled={item.quantity <= 1}
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
-                      <span className="w-8 text-center font-medium">{item.quantity}</span>
+                      <span className="w-8 text-center font-medium">
+                        {item.quantity}
+                      </span>
                       <Button
                         variant="outline"
                         size="icon"
                         className="h-8 w-8 bg-transparent"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity + 1)
+                        }
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -103,13 +130,17 @@ export function CartView() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" size="lg" onClick={() => router.push("/checkout")}>
-                Proceed to Checkout
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={() => router.push("/checkout")}
+              >
+                Continue With Mada
               </Button>
             </CardFooter>
           </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }

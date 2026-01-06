@@ -1,12 +1,7 @@
 "use client";
 
 import type React from "react";
-
-
-
-
-
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,23 +14,40 @@ import { initiate } from "@/api/services/checkout";
 import { v4 as uuidv4 } from "uuid";
 
 export function CheckoutForm() {
-  const { items, total, clearCart } = useCart();
+  const { items, clearCart } = useCart();
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-    address: "",
+    dob: "",
+
+    // ✅ Shipping address fields (match your required keys)
+    streetAddress: "",
+    addressLine2: "",
     city: "",
-    zipCode: "",
+    stateProvince: "",
+    postalCode: "",
+    country: "SA", // default (change if you want)
+
     cardNumber: "",
     expiryDate: "",
     cvv: "",
   });
+
   const [checkoutId, setCheckoutId] = useState("");
+
+  const cartTotal = useMemo(() => {
+    return items.reduce((sum, item) => {
+      const unitPrice = Number(item.price) || 0;
+      const qty = Number(item.quantity) || 0;
+      return sum + unitPrice * qty;
+    }, 0);
+  }, [items]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,12 +55,58 @@ export function CheckoutForm() {
 
     try {
       const reference_id = uuidv4();
-      const result = await initiate(reference_id);
 
-      if (result.kind == "OK") {
+      // ✅ Only include shippingAddress if at least one field is filled
+      const hasShipping =
+        formData.streetAddress ||
+        formData.addressLine2 ||
+        formData.city ||
+        formData.stateProvince ||
+        formData.postalCode ||
+        formData.country;
+
+      const payload: any = {
+        reference_id,
+        currencyCode: "JOD",
+        amount: cartTotal,
+        description: "Checkout payload",
+        buyer: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          dob: formData.dob || "2000-01-20",
+        },
+        items: items.map((item, index) => ({
+          reference_id: `item-${index + 1}`,
+          title: item.name,
+          description: item.description || item.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          product_url: "",
+          image_url: item.image || "",
+          category: item.category || "Clothes",
+        })),
+      };
+
+      if (hasShipping) {
+        payload.shippingAddress = {
+          streetAddress: formData.streetAddress,
+          addressLine2: formData.addressLine2,
+          city: formData.city,
+          stateProvince: formData.stateProvince,
+          postalCode: formData.postalCode,
+          country: formData.country,
+        };
+      }
+
+      const result = await initiate(payload);
+
+      if (result.kind === "OK") {
         setCheckoutId(result.data.checkoutId);
         clearCart();
-        console.log("resultresult", result);
+        router.replace(
+          `https://checkout.stg.mada-bnpl.com/${result.data.checkoutId}`
+        );
       } else {
         toast({
           title: "Checkout failed",
@@ -74,8 +132,8 @@ export function CheckoutForm() {
     }));
   };
 
-  if (items.length === 0) {
-    router.replace(`https://checkout.dev.mada-jo.com/${checkoutId}`);
+  if (items.length === 0 && checkoutId) {
+    router.replace(`https://checkout.stg.mada-bnpl.com/${checkoutId}`);
     return null;
   }
 
@@ -113,6 +171,7 @@ export function CheckoutForm() {
                     />
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -124,6 +183,7 @@ export function CheckoutForm() {
                     required
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
                   <Input
@@ -138,21 +198,36 @@ export function CheckoutForm() {
               </CardContent>
             </Card>
 
+            {/* ✅ Shipping Address (with your required fields) */}
             <Card>
               <CardHeader>
                 <CardTitle>Shipping Address</CardTitle>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="address">Street Address</Label>
+                  <Label htmlFor="streetAddress">Street Address</Label>
                   <Input
-                    id="address"
-                    name="address"
-                    value={formData.address}
+                    id="streetAddress"
+                    name="streetAddress"
+                    value={formData.streetAddress}
                     onChange={handleChange}
+                    placeholder="123 Main Street"
                     required
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="addressLine2">Address Line 2</Label>
+                  <Input
+                    id="addressLine2"
+                    name="addressLine2"
+                    value={formData.addressLine2}
+                    onChange={handleChange}
+                    placeholder="Apt 4B"
+                  />
+                </div>
+
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
@@ -161,59 +236,43 @@ export function CheckoutForm() {
                       name="city"
                       value={formData.city}
                       onChange={handleChange}
+                      placeholder="Riyadh"
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="zipCode">ZIP Code</Label>
-                    <Input
-                      id="zipCode"
-                      name="zipCode"
-                      value={formData.zipCode}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input
-                    id="cardNumber"
-                    name="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    value={formData.cardNumber}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="expiryDate">Expiry Date</Label>
+                    <Label htmlFor="stateProvince">State / Province</Label>
                     <Input
-                      id="expiryDate"
-                      name="expiryDate"
-                      placeholder="MM/YY"
-                      value={formData.expiryDate}
+                      id="stateProvince"
+                      name="stateProvince"
+                      value={formData.stateProvince}
                       onChange={handleChange}
+                      placeholder="Riyadh Province"
                       required
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label htmlFor="cvv">CVV</Label>
+                    <Label htmlFor="postalCode">Postal Code</Label>
                     <Input
-                      id="cvv"
-                      name="cvv"
-                      placeholder="123"
-                      value={formData.cvv}
+                      id="postalCode"
+                      name="postalCode"
+                      value={formData.postalCode}
                       onChange={handleChange}
+                      placeholder="12345"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                      placeholder="SA"
                       required
                     />
                   </div>
@@ -222,6 +281,7 @@ export function CheckoutForm() {
             </Card>
           </div>
 
+          {/* Order Summary */}
           <div className="lg:col-span-1">
             <Card className="sticky top-24">
               <CardHeader>
@@ -235,38 +295,29 @@ export function CheckoutForm() {
                         {item.name} × {item.quantity}
                       </span>
                       <span className="font-medium">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        $
+                        {(Number(item.price) * Number(item.quantity)).toFixed(
+                          2
+                        )}
                       </span>
                     </div>
                   ))}
                 </div>
+
                 <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">${total.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span className="font-medium">Free</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tax</span>
-                    <span className="font-medium">
-                      ${(total * 0.1).toFixed(2)}
-                    </span>
-                  </div>
                   <div className="border-t pt-2">
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
-                      <span>${(total * 1.1).toFixed(2)}</span>
+                      <span>${cartTotal.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
+
                 <Button
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={loading}
+                  disabled={loading || cartTotal <= 0}
                 >
                   {loading ? (
                     <>
@@ -274,7 +325,7 @@ export function CheckoutForm() {
                       Processing...
                     </>
                   ) : (
-                    "Place Order"
+                    "Continue with mada"
                   )}
                 </Button>
               </CardContent>
