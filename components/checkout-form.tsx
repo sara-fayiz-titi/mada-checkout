@@ -266,7 +266,7 @@ export function CheckoutForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
+                    <Label htmlFor="country">Country Code</Label>
                     <Input
                       id="country"
                       name="country"
