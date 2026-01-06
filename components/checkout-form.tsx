@@ -315,7 +315,7 @@ export function CheckoutForm() {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-[#21C8E9]"
                   size="lg"
                   disabled={loading || cartTotal <= 0}
                 >

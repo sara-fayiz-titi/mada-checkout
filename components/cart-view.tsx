@@ -131,7 +131,7 @@ export function CartView() {
             </CardContent>
             <CardFooter>
               <Button
-                className="w-full"
+                className="w-full bg-[#21C8E9]"
                 size="lg"
                 onClick={() => router.push("/checkout")}
               >
